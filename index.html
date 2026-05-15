@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu Mascota Virtual</title>
+<style>
+  :root {
+    --fondo:    #FFF8F0;
+    --tarjeta:  #FFFFFF;
+    --acento:   #FF8C42;
+    --acento2:  #FFB347;
+    --texto:    #2D2014;
+    --texto2:   #7A5C3A;
+    --borde:    #F0DCC8;
+    --fondo-registro:   #FFF3E8;
+    --boton:            #FF8C42;
+    --boton-hover:      #E5763A;
+    --boton2:           #6BC5A0;
+    --boton2-hover:     #5AAD8D;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family:    'Nunito', sans-serif;
+    background:     var(--fondo);
+    min-height:     100vh;
+    display:        flex;
+    flex-direction: column;
+    align-items:    center;
+    padding:        2rem 1rem;
+    color:          var(--texto);
+  }
+  h1 {
+    font-size:      2rem;
+    font-weight:    800;
+    color:          var(--acento);
+    margin-bottom:  0.2rem;
+    letter-spacing: -0.5px;
+  }
+  .subtitulo { font-size: 0.95rem; color: var(--texto2); margin-bottom: 1.5rem; }
+
+  .tarjeta-principal {
+    background:     var(--tarjeta);
+    border-radius:  24px;
+    box-shadow:     var(--sombra);
+    padding:        1.5rem;
+    width:          100%;
+    max-width:      560px;
+    border:         1.5px solid var(--borde);
+  }
+
+  .area-perro {
+    display:        flex;
+    flex-direction: column;
+    align-items:    center;
+    background:     linear-gradient(160deg, #FFF6EC 0%, #FFF0E0 100%);
+    border-radius:  16px;
+    border:         1.5px solid var(--borde);
+    padding:        1rem 1rem 0.5rem;
+    margin-bottom:  1rem;
+  }
+  
+  .etiqueta-estado {
+    font-size:      1.2rem;
+    font-weight:    800;
+    color:          var(--acento);
+    margin-top:     5px;
+  }
+
+  .etiqueta-reaccion {
+    font-size:      0.95rem;
+    color:          var(--texto2);
+    margin-top:     2px;
+    font-style:     italic;
+  }
+
+  .controles {
+    display:        flex;
+    gap:            8px;
+    margin-bottom:  1rem;
+    flex-wrap:      wrap;
+    justify-content: center;
+  }
+  
+  button {
+    font-family:    'Nunito', sans-serif;
+    font-size:      0.9rem;
+    font-weight:    700;
+    padding:        10px 18px;
+    border-radius:  12px;
+    border:         none;
+    cursor:         pointer;
+  }
+  button:active { transform: scale(0.97); } /*pequeña animación de presionar el botón */
+  .boton-ejecutar { background: var(--boton); color: white; }
+  .boton-reiniciar { background: var(--boton2); color: white; width: 100%; }
+  
+  .area-registro {
+    background:     var(--fondo-registro);
+    border:         1.5px solid var(--borde);
+    border-radius:  14px;
+    padding:        10px 14px;
+    height:         130px;
+    overflow-y:     auto;
+    font-size:      0.82rem;
+    color:          var(--texto2);
+    font-weight:    600;
+    line-height:    1.7;
+  }
+  .area-registro .linea-registro { border-bottom: 1px solid #F0DCC8; padding: 2px 0; }
+  .area-registro .linea-registro:last-child { border-bottom: none; }
+  .etiqueta-registro { font-size: 0.8rem; font-weight: 700; color: var(--texto2); margin-bottom: 4px; margin-top: 15px; }
+</style>
+</head>
+<body>
+
+<h1>Tu Mascota Virtual</h1>
+<p class="subtitulo">Máquina de Mealy &mdash; Interactúa con tu perrito</p>
+
+<div class="tarjeta-principal">
+  <div class="area-perro">
+    <img id="imagenPerro" width="200" height="200">
+    <div class="etiqueta-estado" id="etiquetaEstado">Normal</div>
+    <div class="etiqueta-reaccion" id="etiquetaReaccion">Tu perrito está esperando para interactuar</div>
+  </div>
+
+  <div class="controles" id="contenedorBotones"></div>
+
+  <div>
+      <button class="boton-reiniciar" onclick="reiniciarMascota()">
+          Reiniciar Estado
+      </button>
+  </div>
+
+  <div class="etiqueta-registro">Registro de acciones</div>
+  <div class="area-registro" id="registro"></div>
+</div>
+
+<script>
+
+  //── Datos de la máquina de Mealy ──────────────────────────────────────────
+  const ENTRADAS = ["Acariciar","Alimentar","Bañar","Hablar","Jugar","Pasear","Gritar","Ignorar","Castigar","Abrazar"];
+  const SALIDAS  = ["Sonríe","Ladra","Lame","Llora","Mueve la cola","Gruñe","Salta","Se duerme","Se esconde","Se aleja","Se tranquiliza","Tiembla","Aúlla"];
+  const ESTADOS  = ["Normal","Feliz","Triste","Molesto","Confundido","Asustado","Relajado","Hambriento","Cansado","Emocionado","Super feliz"];
+
+  //Tabla de transición de estados (siguiente estado)
+  const TABLA_SIGUIENTE_ESTADO = [
+    [1,9,4,0,7,10,4,7,2,1],
+    [10,10,7,1,10,9,4,2,2,1],
+    [1,1,0,0,1,1,5,3,2,0],
+    [0,4,3,3,0,0,2,3,3,0],
+    [1,4,8,0,1,0,5,2,2,0],
+    [6,0,2,0,1,4,3,2,2,1],
+    [1,1,7,1,8,0,5,0,4,6],
+    [3,10,3,0,8,8,2,3,3,4],
+    [0,1,0,0,7,8,3,0,4,6],
+    [10,9,0,1,10,9,5,2,4,1],
+    [10,10,1,10,9,9,5,4,4,6]
+  ];
+
+  //Tabla de salidas (reacción del perrito)
+  const TABLA_SALIDA = [
+    [0,4,4,1,6,6,11,9,3,2],
+    [2,4,0,1,6,6,5,9,3,0],
+    [0,4,11,0,4,6,11,3,12,2],
+    [5,0,5,5,9,9,12,9,5,9],
+    [1,4,11,1,4,6,11,9,3,2],
+    [11,0,11,11,8,8,11,8,8,0],
+    [10,4,10,0,4,4,5,7,3,10],
+    [2,4,4,1,4,4,5,3,3,2],
+    [10,4,10,0,9,9,5,7,3,10],
+    [6,4,6,1,6,6,5,9,3,2],
+    [6,2,6,1,6,6,5,9,3,2]
+  ];
+
+  const IMAGENES_PERRO = [
+    "imagenes/p_normal.png",
+    "imagenes/p_feliz.png",
+    "imagenes/p_triste.png",
+    "imagenes/p_molesto.png",
+    "imagenes/p_confundido.png",
+    "imagenes/p_asustado.png",
+    "imagenes/p_relajado.png",
+    "imagenes/p_hambriento.png",
+    "imagenes/p_cansado.png",
+    "imagenes/p_emocionado.png",
+    "imagenes/p_superfeliz.png",
+  ];
+
+  //── Estado actual de la máquina ───────────────────────────────────────────
+  let estadoActual = 0;
+
+  //── Inicializa el selector de acciones ─────────────────────────────────────
+  const contenedorBotones = document.getElementById('contenedorBotones');
+
+  ENTRADAS.forEach((entrada, indice) => {
+    const boton = document.createElement('button');
+    boton.textContent = entrada;
+    boton.className = 'boton-ejecutar';
+
+    boton.onclick = () => {
+        ejecutarAccion(indice);
+    };
+    contenedorBotones.appendChild(boton);
+  });
+
+  //── Renderiza el estado y actualiza la etiqueta de estado ────────────────
+  function renderizar() {
+    const imagen = document.getElementById('imagenPerro');
+    imagen.src = IMAGENES_PERRO[estadoActual]; 
+    document.getElementById('etiquetaEstado').textContent = ESTADOS[estadoActual];
+  }
+
+  //── Ejecuta una acción──────────────────────────────────
+  function ejecutarAccion(indiceAccion) {
+    const estadoAnterior = estadoActual;
+
+    //Obtiene la salida y nuevo estado según las tablas de Mealy
+    const indiceSalida = TABLA_SALIDA[estadoActual][indiceAccion];
+    estadoActual = TABLA_SIGUIENTE_ESTADO[estadoActual][indiceAccion];
+
+    //Muestra reacción
+    document.getElementById('etiquetaReaccion').textContent = '¡' + SALIDAS[indiceSalida] + '!';
+
+    //Agrega línea al registro
+    const registro = document.getElementById('registro');
+    const linea = document.createElement('div');
+    linea.className = 'linea-registro';
+    linea.textContent = `${ESTADOS[estadoAnterior]} —[${ENTRADAS[indiceAccion]}]→ ${SALIDAS[indiceSalida]} | ${ESTADOS[estadoActual]}`;
+    registro.appendChild(linea);
+    registro.scrollTop = registro.scrollHeight;
+
+    renderizar();
+  }
+
+  //── Reinicia la mascota al estado inicial ─────────────────────────────────
+  function reiniciarMascota() {
+    estadoActual = 0;
+    document.getElementById('etiquetaReaccion').textContent = 'La mascota fue reiniciada.';
+
+    const registro = document.getElementById('registro');
+    const linea = document.createElement('div');
+    linea.className = 'linea-registro';
+    linea.textContent = '--- Reiniciado al estado Normal ---';
+    registro.appendChild(linea);
+    registro.scrollTop = registro.scrollHeight;
+
+    renderizar();
+  }
+  
+  renderizar();
+</script>
+</body>
+</html>
