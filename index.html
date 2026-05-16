@@ -208,7 +208,7 @@
   function renderizar() {
     const imagen = document.getElementById('imagenPerro');
     imagen.src = IMAGENES_PERRO[estadoActual]; 
-    document.getElementById('etiquetaEstado').textContent = ESTADOS[estadoActual];
+    document.getElementById('etiquetaEstado').textContent = 'ESTADO: ' + ESTADOS[estadoActual];
   }
 
   //── Ejecuta una acción──────────────────────────────────
@@ -220,7 +220,7 @@
     estadoActual = TABLA_SIGUIENTE_ESTADO[estadoActual][indiceAccion];
 
     //Muestra reacción
-    document.getElementById('etiquetaReaccion').textContent = '¡' + SALIDAS[indiceSalida] + '!';
+    document.getElementById('etiquetaReaccion').textContent = '¡El perrito ' + SALIDAS[indiceSalida] + '!';
 
     //Agrega línea al registro
     const registro = document.getElementById('registro');
